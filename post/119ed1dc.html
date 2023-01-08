@@ -1,0 +1,396 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>Redis持久化 | 夜斗の博客</title><meta name="author" content="夜斗"><meta name="copyright" content="夜斗"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Redis持久化redis里有10gb数据，突然停电或者意外宕机了，再启动的时候10gb都没了？！所以需要持久化，宕机后再通过持久化文件将数据恢复。 RDBRDB是什么在指定时间内将redis中的数据写入到文件中，简称快照 如何使用如果服务器开启了AOF持久化功能，那么服务器会优先使用AOF文件来还原数据库状态。 只有在AOF持久化功能处于关闭状态时，服务器才会使用RDB文件来还原数据库状态。 R">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis持久化">
+<meta property="og:url" content="http://www.caicablog.com/post/119ed1dc.html">
+<meta property="og:site_name" content="夜斗の博客">
+<meta property="og:description" content="Redis持久化redis里有10gb数据，突然停电或者意外宕机了，再启动的时候10gb都没了？！所以需要持久化，宕机后再通过持久化文件将数据恢复。 RDBRDB是什么在指定时间内将redis中的数据写入到文件中，简称快照 如何使用如果服务器开启了AOF持久化功能，那么服务器会优先使用AOF文件来还原数据库状态。 只有在AOF持久化功能处于关闭状态时，服务器才会使用RDB文件来还原数据库状态。 R">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg">
+<meta property="article:published_time" content="2023-01-02T05:38:03.000Z">
+<meta property="article:modified_time" content="2023-01-03T08:40:44.117Z">
+<meta property="article:author" content="夜斗">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg"><link rel="shortcut icon" href="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/微信图片_20221211194510.jpg"><link rel="canonical" href="http://www.caicablog.com/post/119ed1dc"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Redis持久化',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: true,
+  isToc: true,
+  postUpdate: '2023-01-03 16:40:44'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><link rel="stylesheet" href="/css/rightmenu.css"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Zfour/Butterfly-double-row-display@1.00/cardlistpost.min.css"/>
+<style>#recent-posts > .recent-post-item >.recent-post-info > .article-meta-wrap > .tags:before {content:"\A";
+  white-space: pre;}#recent-posts > .recent-post-item >.recent-post-info > .article-meta-wrap > .tags > .article-meta__separator{display:none}</style>
+<link rel="stylesheet" href="https://unpkg.zhimg.com/hexo-butterfly-footer-beautify@1.0.0/lib/runtime.min.css" media="print" onload="this.media='all'"><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>const preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',()=> { preloader.endLoading() })
+
+if (true) {
+  document.addEventListener('pjax:send', () => { preloader.initLoading() })
+  document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+}</script><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/微信图片_20221211194510.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 我喜欢的</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">夜斗の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 我喜欢的</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Redis持久化</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-01-02T05:38:03.000Z" title="发表于 2023-01-02 13:38:03">2023-01-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-01-03T08:40:44.117Z" title="更新于 2023-01-03 16:40:44">2023-01-03</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF/">后端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>12分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Redis持久化"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><div class="top-img gist" style="background-image: url(https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg)"></div><article class="post-content" id="article-container"><h1 id="Redis持久化"><a href="#Redis持久化" class="headerlink" title="Redis持久化"></a>Redis持久化</h1><p>redis里有10gb数据，突然停电或者意外宕机了，再启动的时候10gb都没了？！所以需要持久化，宕机后再通过持久化文件将数据恢复。</p>
+<h2 id="RDB"><a href="#RDB" class="headerlink" title="RDB"></a>RDB</h2><h3 id="RDB是什么"><a href="#RDB是什么" class="headerlink" title="RDB是什么"></a>RDB是什么</h3><p>在指定时间内将redis中的数据写入到文件中，简称快照</p>
+<h3 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h3><p>如果服务器开启了AOF持久化功能，那么服务器会优先使用AOF文件来还原数据库状态。</p>
+<p>只有在AOF持久化功能处于关闭状态时，服务器才会使用RDB文件来还原数据库状态。</p>
+<p>RDB持久化在四种情况下会执行：</p>
+<p>修改opt下的redis.conf文件</p>
+<p>dump.rdb在usr&#x2F;local&#x2F;bin&#x2F;dump.rdb</p>
+<h4 id="save命令"><a href="#save命令" class="headerlink" title="save命令"></a>save命令</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">save</span></span><br></pre></td></tr></table></figure>
+
+<p>持久化的时候redis服务阻塞（会阻塞当前执行save命令的线程，但是redis是单线程的，所以整个服务会阻塞），不能继对外提供请求,数据量小的话肯定影响不大，数据量大呢？每次复制需要1小时，那就相当于停机一小时。</p>
+<h4 id="bgsave命令"><a href="#bgsave命令" class="headerlink" title="bgsave命令"></a>bgsave命令</h4><p>异步执行RDB这个命令执行后会开启独立进程完成RDB，主进程可以持续处理用户请求，不受影响。</p>
+<p>在BGSAVE命令执行期间，客户端发送的SAVE命令会被服务器拒绝，服务器禁止SAVE命令和BGSAVE命令同时执行是为了避免父进程（服务器进程）和子进程同时执行两个rdbSave调用，防止产生竞争条件。</p>
+<p>其次，在BGSAVE命令执行期间，客户端发送的BGSAVE命令会被服务器拒绝，因为同时执行两个BGSAVE命令也会产生竞争条件。</p>
+<p>BGREWRITEAOF和BGSAVE两个命令不能同时执丸行：</p>
+<ol>
+<li>如果BGSAVE命令正在执行，那么客户端发送的BGREWRITEAOF命令会<br> 被延迟到BGSAVE命令执行完毕之后执行。</li>
+<li>如果BGREWRITEAOF命令正在执行，那么客户端发送的BGSAVE命令会<br> 被服务器拒绝。</li>
+</ol>
+<h4 id="Redis停机时"><a href="#Redis停机时" class="headerlink" title="Redis停机时"></a>Redis停机时</h4><p><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/image-20230102110937878.png" alt="image-20230102110937878"></p>
+<h4 id="触发RDB条件"><a href="#触发RDB条件" class="headerlink" title="触发RDB条件"></a>触发RDB条件</h4><p>用户可以通过save选项设置多个保存条件，但只要其中任意一个条件被满足，服务器就会执行BGSAVE命令。</p>
+<p>Redis内部有触发RDB的机制，可以在redis.conf文件中找到，格式如下：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 900秒内，如果至少有1个key被修改，则执行bgsave ， 如果是save &quot;&quot; 则表示禁用RDB</span></span><br><span class="line"><span class="attr">save</span> <span class="string">900 1  </span></span><br><span class="line"><span class="attr">save</span> <span class="string">300 10  </span></span><br><span class="line"><span class="attr">save</span> <span class="string">60 10000 </span></span><br></pre></td></tr></table></figure>
+
+<p>RDB的其它配置也可以在redis.conf文件中设置：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 是否压缩 ,建议不开启，压缩也会消耗cpu，磁盘的话不值钱</span></span><br><span class="line"><span class="attr">rdbcompression</span> <span class="string">yes</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># RDB文件名称</span></span><br><span class="line"><span class="attr">dbfilename</span> <span class="string">dump.rdb  </span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 文件保存的路径目录</span></span><br><span class="line"><span class="attr">dir</span> <span class="string">./ </span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="bgsave备份原理"><a href="#bgsave备份原理" class="headerlink" title="bgsave备份原理"></a>bgsave备份原理</h3><p>bgsave原理是fork() + copyonwrite。</p>
+<h4 id="fork"><a href="#fork" class="headerlink" title="fork"></a>fork</h4><ol>
+<li><p>fork()是什么<br> fork()是unix和linux这种操作系统的一个api，而不是Redis的api。</p>
+</li>
+<li><p>fork()有什么用</p>
+<p> fork()用于创建一个子进程，子进程共享父进程的内存数据。仅仅是共享fork()出子进程的那一刻的内存数据，后期主进程修改数据对子进程不可见，同理，子进程修改的数据对主进程也不可见。但是主进程挂了，子进程也必须跟随一起挂。这一点有点像守护线程的概念。</p>
+</li>
+<li><p>Redis中的fork()<br> 当bgsave执行时，Redis主进程会判断当前是否有fork()出来的子进程，若有则忽略，若没有则会fork()出一个子进程来执行rdb文件持久化的工作，子进程与Redis主进程共享同一份内存空间，所以子进程可以搞他的rdb文件持久化工作，主进程又能继续他的对外提供服务，二者互不影响。他们之后的修改内存数据对彼此不可见，但是明明指向的都是同一块内存空间，这是咋搞得？采取了copyonwrite技术。</p>
+</li>
+</ol>
+<h4 id="copyonwrite"><a href="#copyonwrite" class="headerlink" title="copyonwrite"></a>copyonwrite</h4><p>主进程fork()子进程之后，内核把主进程中所有的内存页的权限都设为read-only（只读），然后子进程的地址空间指向主进程。这也就是共享了主进程的内存，当其中某个进程写内存时(这里肯定是主进程写，因为子进程只负责rdb文件持久化工作，不参与客户端的请求)，CPU硬件检测到内存页是read-only的，于是触发页异常中断（page-fault），陷入内核的一个中断例程。中断例程中，内核就会把触发的异常的页复制一份（这里仅仅复制异常页，也就是所修改的那个数据页，而不是内存中的全部数据），于是主子进程各自持有独立的一份。4</p>
+<blockquote>
+<p>copyonwritefork()出来的子进程共享主进程的物理空间，当主子进程有内存写入操作时，read-only内存页发生中断，将触发的异常的内存页复制一份(其余的页还是共享主进程的)。</p>
+</blockquote>
+<p><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/image-20230102113556077.png" alt="image-20230102113556077"></p>
+<h3 id="源码解析"><a href="#源码解析" class="headerlink" title="源码解析"></a>源码解析</h3><h4 id="执行命令的代码解析"><a href="#执行命令的代码解析" class="headerlink" title="执行命令的代码解析"></a>执行命令的代码解析</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">def <span class="title function_">SAVE</span><span class="params">()</span>:</span><br><span class="line">    #创建RDB文件</span><br><span class="line">    <span class="title function_">rdbsave</span><span class="params">()</span></span><br><span class="line">def <span class="title function_">BGSAVE</span><span class="params">()</span>:</span><br><span class="line">    #创建子进程</span><br><span class="line">    pid <span class="title function_">fork</span><span class="params">()</span></span><br><span class="line">    <span class="keyword">if</span> pid ==<span class="number">0</span>:</span><br><span class="line">        #子进程负责创建RDB文件</span><br><span class="line">        rdbsave()</span><br><span class="line">        #完成之后向父进程发送信号</span><br><span class="line">        signal_parent()</span><br><span class="line">    elif pid <span class="number">0</span>:</span><br><span class="line">        #父进程继续处理命令请求，并通过轮询等待子进程的信号</span><br><span class="line">        handle_request_and_wait_signal()</span><br><span class="line">    <span class="keyword">else</span>;</span><br><span class="line">    #处理出错情况</span><br><span class="line">    handle_fork_error()</span><br></pre></td></tr></table></figure>
+
+<h4 id="设置保存命令的触发原理"><a href="#设置保存命令的触发原理" class="headerlink" title="设置保存命令的触发原理"></a>设置保存命令的触发原理</h4><p>服务器程序会根据sav选项所设置的保存条件，设置服务器状态redisServer结构的saveparams属性：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span>&#123;</span></span><br><span class="line">	记录了保存条件的数组</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">saveparams</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>saveparams属性是一个数组，数组中的每个元素都是一个saveparam结构，每个saveparam结构都保存了一个save选项设置的保存条件</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span>&#123;</span></span><br><span class="line">    <span class="comment">//秒数</span></span><br><span class="line">    <span class="type">time_t</span> seconds;</span><br><span class="line">    <span class="comment">//修改数</span></span><br><span class="line">    <span class="type">int</span> changes;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>设置save保存条件后的redisSever</p>
+<p><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/image-20230102115342014.png" alt="image-20230102115342014"></p>
+<p>redisServer除了saveparams数组之外，服务器状态还维持着一个dirtyi计数器，以及一个lastsave属性</p>
+<ol>
+<li>dirty计数器记录距离上一次成功执行SAVE命令或者BGSAVE命令之后，服务器对数据库状态（服务器中的所有数据库）进行了多少次修改（包括写入、删除、更新等操作)</li>
+<li>lastsave属性是一个UNlX时间戳，记录了服务器上一次成功执行SAVE命令或者BGSAVE命令的时间。</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span>&#123;</span></span><br><span class="line">    <span class="comment">//修改计数器</span></span><br><span class="line">    <span class="type">long</span> dirty;</span><br><span class="line">    人上一次执行保存的时间</span><br><span class="line">    <span class="type">time_t</span> lastsave;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Redis的服务器周期性操作函数serverCron默认每隔1O0毫秒就会执行一次，该函数用于对正在运行的服务器进行维护，它的其中一项工作就是检查save选项所设的保存条件是否已经满足，如果满足的话，就执行BGSAVE命令。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">serverCron</span>():</span><br><span class="line">    <span class="comment">#遍历所有保存条件</span></span><br><span class="line">    <span class="keyword">for</span> saveparam <span class="keyword">in</span> server.<span class="symbol">saveparams:</span></span><br><span class="line">        <span class="comment">#计算距离上次执行保存操作有多少秒</span></span><br><span class="line">        save interval unixtime now()-server.lastsave</span><br><span class="line">        <span class="comment">#如果数据库状态的修改次数超过条件所设置的次数</span></span><br><span class="line">        <span class="comment">#并且距离上次保存的时间超过条件所设置的时间</span></span><br><span class="line">        <span class="comment">#那么执行保存操作</span></span><br><span class="line">        <span class="keyword">if</span> server.dirty &gt;saveparam.changes <span class="keyword">and</span> save_interval saveparam.<span class="symbol">seconds:</span></span><br><span class="line">            <span class="variable constant_">BGSAVE</span> ()</span><br></pre></td></tr></table></figure>
+
+<p>假设BGSAVE在执行5秒之后完成,dirty计数器会被重置为0，而jlastsave（)属性也被更新为1378271106。</p>
+<h3 id="RDB的优缺点"><a href="#RDB的优缺点" class="headerlink" title="RDB的优缺点"></a>RDB的优缺点</h3><ul>
+<li>优势<ul>
+<li>适合大规模的数据恢复</li>
+<li>对数据完整性和一致性要求不高更适合使用</li>
+<li>节省磁盘空间</li>
+<li>恢复速度快</li>
+</ul>
+</li>
+<li>劣势<ul>
+<li>Fork的时候，内存中的数据被克隆了一份，大致2倍的膨胀性需要考虑</li>
+<li>虽然Redis在fork时使用了<strong>写时拷贝技术</strong>,但是如果数据庞大时还是比较消耗性能。</li>
+<li>在备份周期在一定间隔时间做一次备份，所以如果Redis意外down掉的话，就会丢失最后一次快照后的所有修改。</li>
+</ul>
+</li>
+</ul>
+<h2 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a>AOF</h2><h3 id="AOF是什么"><a href="#AOF是什么" class="headerlink" title="AOF是什么"></a>AOF是什么</h3><p>AOF全称为Append Only File（追加文件）。Redis处理的每一个写命令都会记录在AOF文件，可以看做是命令日志文件。</p>
+<h3 id="如何使用-1"><a href="#如何使用-1" class="headerlink" title="如何使用"></a>如何使用</h3><p>AOF默认是关闭的，需要修改redis.conf配置文件来开启AOF：</p>
+<p>可以在<strong>redis.conf</strong>中配置文件名称，默认为 <strong>appendonly.aof</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 是否开启AOF功能，默认是no</span></span><br><span class="line"><span class="attr">appendonly</span> <span class="string">yes</span></span><br><span class="line"><span class="comment"># AOF文件的名称</span></span><br><span class="line"><span class="attr">appendfilename</span> <span class="string">&quot;appendonly.aof&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>AOF的命令记录的频率也可以通过redis.conf文件来配：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 表示每执行一次写命令，立即记录到AOF文件</span></span><br><span class="line"><span class="attr">appendfsync</span> <span class="string">always </span></span><br><span class="line"><span class="comment"># 写命令执行完先放入AOF缓冲区，然后表示每隔1秒将缓冲区数据写到AOF文件，是默认方案</span></span><br><span class="line"><span class="attr">appendfsync</span> <span class="string">everysec </span></span><br><span class="line"><span class="comment"># 写命令执行完先放入AOF缓冲区，由操作系统决定何时将缓冲区内容写回磁盘</span></span><br><span class="line"><span class="attr">appendfsync</span> <span class="string">no</span></span><br></pre></td></tr></table></figure>
+
+<p>三者的区别<br><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/image-20230102121642558.png" alt="image-20230102121642558"></p>
+<p>因为是记录命令，AOF文件会比RDB文件大的多。而且AOF会记录对同一个key的多次写操作，但只有最后一次写操作才有意义。通过执行&#96;&#96;bgrewriteaof&#96;命令，可以让AOF文件执行重写功能，用最少的命令达到相同效果。</p>
+<p><code>set num 123 和 set num 666</code>都是对num的操作，第二次会覆盖第一次的值，因此第一个命令记录下来没有意义。</p>
+<p>所以重写命令后，AOF文件内容就是：<code>mset name jack num 666</code></p>
+<p>Redis也会在触发阈值时自动去重写AOF文件。</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># AOF文件比上次文件 增长超过多少百分比则触发重写</span></span><br><span class="line"><span class="attr">auto-aof-rewrite-percentage</span> <span class="string">100</span></span><br><span class="line"><span class="comment"># AOF文件体积最小多大以上才触发重写 </span></span><br><span class="line"><span class="attr">auto-aof-rewrite-min-size</span> <span class="string">64mb </span></span><br></pre></td></tr></table></figure>
+
+<h3 id="原理解析"><a href="#原理解析" class="headerlink" title="原理解析"></a>原理解析</h3><p>追加原理</p>
+<p>当AOF持久化功能处于打开状态时，服务器在执行完一个写命令之后，会以协议格式将被执行的写命令追加到服务器状态的aof buf缓冲区的末尾：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span>&#123;</span></span><br><span class="line">	<span class="comment">//A0F缓冲区☒</span></span><br><span class="line">	sds aof buf;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>写入文件</p>
+<p>服务器进程就是一个循环的命令请求</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">def <span class="title function_">eventLoop</span><span class="params">()</span>:</span><br><span class="line">	<span class="keyword">while</span> True:</span><br><span class="line">        #处理文件事件，接收命令请求以及发送命令回复</span><br><span class="line">        #处理命令清求时可能会有新内容被追加到aof buf缓冲区中</span><br><span class="line">        <span class="title function_">processFileEvents</span><span class="params">()</span></span><br><span class="line">        #处理时间事件</span><br><span class="line">        <span class="title function_">processTimeEvents</span><span class="params">()</span></span><br><span class="line">        #考虑是否要将aof buf中的内容写入和保存到AOF文件里面</span><br><span class="line">        <span class="title function_">flushAppendOnlyFile</span><span class="params">()</span></span><br></pre></td></tr></table></figure>
+
+<p> flushAppendOnlyFile()函数根据appendfsync是否写入到AOF文件中</p>
+<p>redis重启服务读取AOF步骤</p>
+<ol>
+<li>创建一个不带网络连接的伪客户端(fake client)：</li>
+<li>从AOF文件中分析并读取出一条写命令。</li>
+<li>使用伪客户端执行被读出的写命令。</li>
+<li>一直执行步骤2和步骤3，直到AOF文件中的所有写命令都被处理完毕为止。</li>
+</ol>
+<p>重写文件的原理解析</p>
+<p>会重写覆盖之前的命令，所以没有一条命令是浪费的</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">aof</span> rewrite(new aof file name):</span><br><span class="line">    <span class="comment">#创建新AOF文件</span></span><br><span class="line">    f create file(new aof file name)</span><br><span class="line">    <span class="comment">#遍历数据库</span></span><br><span class="line">    <span class="keyword">for</span> db <span class="keyword">in</span> redisServer.db:</span><br><span class="line">        <span class="comment">#忽略空数据库</span></span><br><span class="line">        <span class="keyword">if</span> db.<span class="keyword">is</span> empty():<span class="keyword">continue</span>;</span><br><span class="line">        <span class="comment">#写入SELECT命令，指定数据库号码</span></span><br><span class="line">        f.write command (SELECT+db.<span class="built_in">id</span>)</span><br><span class="line">        <span class="comment">#遍历数据库中的所有键</span></span><br><span class="line">        <span class="keyword">for</span> key <span class="keyword">in</span> db:</span><br><span class="line">            <span class="comment">#忽略已过期的键</span></span><br><span class="line">            <span class="keyword">if</span> key.<span class="keyword">is</span> expired():<span class="keyword">continue</span></span><br><span class="line">            <span class="comment">#根据键的类型对键进行重写</span></span><br><span class="line">            <span class="keyword">if</span> key.<span class="built_in">type</span> ==String:</span><br><span class="line">            	rewrite string (key)</span><br><span class="line">            <span class="keyword">elif</span> key.<span class="built_in">type</span> ==<span class="type">List</span>:</span><br><span class="line">                rewrite <span class="built_in">list</span> (key)</span><br><span class="line">            <span class="keyword">elif</span> key.<span class="built_in">type</span> =Hash:</span><br><span class="line">                rewrite <span class="built_in">hash</span> (key)</span><br><span class="line">            <span class="keyword">elif</span> key.<span class="built_in">type</span> ==<span class="type">Set</span>:</span><br><span class="line">                rewrite_set (key)</span><br><span class="line">            <span class="keyword">elif</span> key.<span class="built_in">type</span> =SortedSet:</span><br><span class="line">                rewrite <span class="built_in">sorted</span> <span class="built_in">set</span> (key)</span><br><span class="line">            <span class="comment">#如果键带有过期时间，那么过期时间也要被重写</span></span><br><span class="line">            <span class="keyword">if</span> key.have_expire_time():</span><br><span class="line">                rewrite_expire_time (key)</span><br><span class="line">		<span class="comment">#写入完毕，关闭文件</span></span><br><span class="line">        f.close()</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite_string</span>(<span class="params">key</span>):</span><br><span class="line">    <span class="comment">#使用GET命令获取字符串键的值</span></span><br><span class="line">    value GET (key)</span><br><span class="line">    <span class="comment">#使用SET命令重写字符串键</span></span><br><span class="line">    f.write command(SET,key,value)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite</span> <span class="built_in">list</span> (key):</span><br><span class="line">    <span class="comment">#使用LRANGE命令获取列表键包含的所有元素</span></span><br><span class="line">    item1,item2,...,itemN LRANGE (key,<span class="number">0</span>,-<span class="number">1</span>)</span><br><span class="line">    <span class="comment">#使用RPUSH命令重写列表键</span></span><br><span class="line">    f.write_command (RPUSH,key,item1,item2,...,itemN)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite</span> <span class="built_in">hash</span> (key):</span><br><span class="line">    <span class="comment">#使用HGETALL命令获取哈希键包含的所有键值对</span></span><br><span class="line">    field1,value1,field2,value2,...fieldN,valueN HGETALL(key)</span><br><span class="line">    <span class="comment">#使用HMSET命令重写哈希键</span></span><br><span class="line">    f.write_command (HMSET,key,field1,value1,field2,value2,</span><br><span class="line">    ...fieldN,valueN)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite</span> <span class="built_in">set</span> (key);</span><br><span class="line">    <span class="comment">#使用SMEMBERS命令获取集合键包含的所有元素</span></span><br><span class="line">    elem1,elem2,...elemN SMEMBERS (key)</span><br><span class="line">    <span class="comment">#使用SADD命令重写集合键</span></span><br><span class="line">    f.write_command(SADD,key,eleml,elem2,...,elemN)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite</span> <span class="built_in">sorted</span> <span class="built_in">set</span> (key):</span><br><span class="line">    <span class="comment">#使用ZRANGE命令获取有序集合键包含的所有元素</span></span><br><span class="line">    member1,score1,member2,score2,...memberN,scoreN ZRANG</span><br><span class="line">    E(key,<span class="number">0</span>,-<span class="number">1</span>,<span class="string">&quot;WITHSCORES&quot;</span>)</span><br><span class="line">    <span class="comment">#使用ZADD命令重写有序集合键</span></span><br><span class="line">    f.write command (ZADD,key,scorel,member1,score2,member2,</span><br><span class="line">    scoreN,memberN)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rewrite_expire_time</span> (key):</span><br><span class="line">    <span class="comment">#获取毫秒精度的键过期时间戳</span></span><br><span class="line">    timestamp get_expire_time_in_unixstamp(key)</span><br><span class="line">    <span class="comment">#使用PEXPIREAT命令重写键的过期时间</span></span><br><span class="line">    f.write_command (PEXPIREAT,key,timestamp)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>AOF后台重写</p>
+<p>aof rewritel函数会进行大量的写入操作，所以调用这个函数的线程将被长时间阻塞，因为Redis服务器使用单个线程来处理命令请求，所以如果由服务器直接调用aof rewritel函数的话，那么在重写AOF文件期间，服务期将无法处理客户端发来的命令请求。<br>Redis决定将AOF重写程序放到子进程里执行</p>
+<ul>
+<li>子进程进行AOF重写期间，服务器进程（父进程）可以继续处理命令请<br>  求。</li>
+<li>子进程带有服务器进程的数据副本，使用子进程而不是线程，可以在避免<br>  使用锁的情况下，保证数据的安全性。</li>
+</ul>
+<p>但是有个问题，在子进程重写期间，我们又对父进程写入数据，子进程和父进程的数据不一致</p>
+<p>为了解决这种数据不一致问题，Redis服务器设置了一个AOF重写缓冲区</p>
+<p>在子进程执行AOF重写期间，服务器进程需要执行以下三个工作：</p>
+<ol>
+<li>执行客户端发来的命令。</li>
+<li>将执行后的写命令追加到AOF缓冲区。</li>
+<li>将执行后的写命令追加到AOF重写缓冲区。</li>
+</ol>
+<p>当子进程完成AOF重写工作之后，它会向父进程发送一个信号，父进程在接到该信<br>号之后，会调用一个信号处理函数，并执行以下工作：</p>
+<ol>
+<li>将AOF重写缓冲区中的所有内容写入到新AOF文件中，这时新AOF文件所保存<br> 的数据库状态将和服务器当前的数据库状态一致。</li>
+<li>对新的AOF文件进行改名，原子地(atomic)覆盖现有的AOF文件，完成新l旧<br> 两个AOF文件的替换。</li>
+</ol>
+<p>重写流程</p>
+<p>bgrewriteaof触发重写，判断是否当前有<strong>bgsave</strong>或<strong>bgrewriteaof</strong>在运行，如果有，则<strong>等待该命令结束后再继续执行</strong>。</p>
+<ul>
+<li>主进程fork出子进程执行重写操作，保证主进程不会阻塞。</li>
+<li>子进程遍历redis内存中数据到临时文件，客户端的写请求同时写入aof_buf缓冲区和aof_rewrite_buf重写缓冲区保证原AOF文件完整以及新AOF文件生成期间的新的数据修改动作不会丢失。</li>
+<li>子进程写完新的AOF文件后，向主进程发信号，父进程更新统计信息。</li>
+<li>主进程把aof_rewrite_buf中的数据写入到新的AOF件。</li>
+<li>使用新的AOF文件覆盖旧的AOF文件，完成AOF重写。</li>
+</ul>
+<h3 id="AOF异常恢复"><a href="#AOF异常恢复" class="headerlink" title="AOF异常恢复"></a>AOF异常恢复</h3><ul>
+<li><p>修改默认的appendonly no，改为yes</p>
+</li>
+<li><p>如遇到<strong>AOF（比如手动对文件进行修改）文件损坏</strong>，通过**&#x2F;usr&#x2F;local&#x2F;bin&#x2F;redis-check-aof–fix**  appendonly.aof进行恢复</p>
+<blockquote>
+<p>要在appendonly.aof文件下执行该命令</p>
+</blockquote>
+</li>
+<li><p>备份被写坏的AOF文件</p>
+</li>
+<li><p>恢复：重启redis，然后重新加载</p>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/image-20230102133624745.png" alt="image-20230102133624745"></p>
+</article><div class="post-copyright"><div class="post-copyright__title"><span class="post-copyright-info"><h>Redis持久化</h></span></div><div class="post-copyright__type"><span class="post-copyright-info"><a href="http://www.caicablog.com/post/119ed1dc.html">http://www.caicablog.com/post/119ed1dc.html</a></span></div><div class="post-copyright-m"><div class="post-copyright-m-info"><div class="post-copyright-a" style="display: inline-block;width: 120px"><h>作者</h><div class="post-copyright-cc-info"><h>夜斗</h></div></div><div class="post-copyright-c" style="display: inline-block;width: 120px"><h>发布于</h><div class="post-copyright-cc-info"><h>2023-01-02</h></div></div><div class="post-copyright-u" style="display: inline-block;width: 120px"><h>更新于</h><div class="post-copyright-cc-info"><h>2023-01-03</h></div></div><div class="post-copyright-c" style="display: inline-block;width: 120px"><h>许可协议</h><div class="post-copyright-cc-info"><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a rel="noopener" target="_blank" title="CC BY 4.0" href="https://creativecommons.org/licenses/by/4.0/deed.zh">CC BY 4.0</a></div></div></div></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a></div><div class="post_share"><div class="social-share" data-image="https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/26216.html" title="Redis基础"><img class="cover" src="https://img.win3000.com/m00/93/89/591ce799469e31673439e15f7fb6f626.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-12-15</div><div class="title">Redis基础</div></div></a></div><div><a href="/post/1e8aa882.html" title="Redis多级缓存"><img class="cover" src="https://xinzhuobu.com/wp-content/uploads/2022/06/20220605002.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-01-04</div><div class="title">Redis多级缓存</div></div></a></div><div><a href="/post/7ed01655.html" title="Redis安装卸载集群"><img class="cover" src="https://xinzhuobu.com/wp-content/uploads/2022/10/20221023001.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-01-03</div><div class="title">Redis安装卸载集群</div></div></a></div><div><a href="/post/e6b0e0d3.html" title="Redis分布式锁和3大缓存问题"><img class="cover" src="https://xinzhuobu.com/wp-content/uploads/2022/11/20221105001.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-01-03</div><div class="title">Redis分布式锁和3大缓存问题</div></div></a></div><div><a href="/post/3340c4c2.html" title="Redis最佳实践"><img class="cover" src="https://xinzhuobu.com/wp-content/uploads/2022/05/20220517001.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-01-07</div><div class="title">Redis最佳实践</div></div></a></div><div><a href="/post/85682d75.html" title="Redis数据结构"><img class="cover" src="https://xinzhuobu.com/wp-content/uploads/2022/11/20221117001.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-01-03</div><div class="title">Redis数据结构</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4869/微信图片_20221211194510.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">夜斗</div><div class="author-info__description">一个人的命运不是自己想改变就能改变了的</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/fomalhaut1998"><i></i><span>🛴前往小家...</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/xxxxx" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="mailto:xxxxxx@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Redis%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-text">Redis持久化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#RDB"><span class="toc-text">RDB</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#RDB%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-text">RDB是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8"><span class="toc-text">如何使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#save%E5%91%BD%E4%BB%A4"><span class="toc-text">save命令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#bgsave%E5%91%BD%E4%BB%A4"><span class="toc-text">bgsave命令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Redis%E5%81%9C%E6%9C%BA%E6%97%B6"><span class="toc-text">Redis停机时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91RDB%E6%9D%A1%E4%BB%B6"><span class="toc-text">触发RDB条件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#bgsave%E5%A4%87%E4%BB%BD%E5%8E%9F%E7%90%86"><span class="toc-text">bgsave备份原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#fork"><span class="toc-text">fork</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#copyonwrite"><span class="toc-text">copyonwrite</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90"><span class="toc-text">源码解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E7%9A%84%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90"><span class="toc-text">执行命令的代码解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E4%BF%9D%E5%AD%98%E5%91%BD%E4%BB%A4%E7%9A%84%E8%A7%A6%E5%8F%91%E5%8E%9F%E7%90%86"><span class="toc-text">设置保存命令的触发原理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RDB%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="toc-text">RDB的优缺点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AOF"><span class="toc-text">AOF</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AOF%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-text">AOF是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-1"><span class="toc-text">如何使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90"><span class="toc-text">原理解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOF%E5%BC%82%E5%B8%B8%E6%81%A2%E5%A4%8D"><span class="toc-text">AOF异常恢复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer" style="background-image: url('https://xinzhuobu.com/wp-content/uploads/2022/12/20221206001th.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2023 By 夜斗</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"></div><div class="aplayer no-destroy" data-id="1215482" data-server="netease" data-type="song"   data-order="list" data-fixed="true" data-preload="auto" data-autoplay="false" data-mutex="true" ></div><script defer src="/js/light.js"></script><script src="//cdn.bootcss.com/pace/1.0.2/pace.min.js"></script><script type="text/javascript" src="https://cdn1.tianli0.top/npm/jquery@latest/dist/jquery.min.js"></script><script type="text/javascript" src="/js/rightmenu.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener scroll 
+  window.tocScrollFn && window.removeEventListener('scroll', window.tocScrollFn)
+  window.scrollCollect && window.removeEventListener('scroll', scrollCollect)
+
+  document.getElementById('rightside').style.cssText = "opacity: ''; transform: ''"
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', (e) => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div><!-- hexo injector body_end start --><script data-pjax>
+  function butterfly_footer_beautify_injector_config(){
+    var parent_div_git = document.getElementById('footer-wrap');
+    var item_html = '<div id="workboard"></div><p id="ghbdages"><a class="github-badge" target="_blank" href="https://beian.miit.gov.cn/#/Integrated/index" style="margin-inline:5px" data-title="本站已在我这里进行备案" title=""><img src="https://img.shields.io/badge/我备案-e1d492?style=flat&amp;logo=data:image/png;base64,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" alt=""/></a><a class="github-badge" target="_blank" href="https://github.com/" style="margin-inline:5px" data-title="本站项目由Github托管" title=""><img src="https://img.shields.io/badge/Source-Github-d021d6?style=flat&amp;logo=GitHub" alt=""/></a><a class="github-badge" target="_blank" href="https://www.upyun.com/?utm_source=lianmeng&amp;utm_medium=referral" style="margin-inline:5px" data-title="本站使用为静态资源提供CDN加速" title=""><img src="https://img.shields.io/badge/CDN-又拍云-orange?style=flat&amp;logo=又拍云" alt=""/></a></p>';
+    console.log('已挂载butterfly_footer_beautify')
+    parent_div_git.insertAdjacentHTML("beforeend",item_html)
+    }
+  var elist = 'null'.split(',');
+  var cpage = location.pathname;
+  var epage = 'all';
+  var flag = 0;
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_footer_beautify_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_footer_beautify_injector_config();
+  }
+  </script><script async src="https://unpkg.zhimg.com/hexo-butterfly-footer-beautify@1.0.0/lib/runtime.min.js"></script><!-- hexo injector body_end end --><script async>window.onload=function(){var a=document.createElement('script'),b=document.getElementsByTagName('script')[0];a.type='text/javascript',a.async=!0,a.src='/sw-register.js?v='+Date.now(),b.parentNode.insertBefore(a,b)};</script></body></html>
