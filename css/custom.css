@@ -1207,6 +1207,13 @@ button#mobile-toc-button {
     background:-ms-linear-gradient(left,#b91d73,#f953c6);
     background:linear-gradient(to right,#b91d73,#f953c6)
 }
+#page .category-lists .category-list li.category-list-item:nth-child(8){
+    background:-webkit-linear-gradient(right,#38ef7d,#11998e);
+    background:-moz-linear-gradient(right,#38ef7d,#11998e);
+    background:-o-linear-gradient(right,#38ef7d,#11998e);
+    background:-ms-linear-gradient(right,#38ef7d,#11998e);
+    background:linear-gradient(to left,#38ef7d,#11998e)
+}
 #page .category-lists .category-list li.category-list-item:nth-child(8) a.category-list-link::before{
     content:'📝'
 }
@@ -1217,11 +1224,57 @@ button#mobile-toc-button {
     background:-ms-linear-gradient(left,#f12711,#f5af19);
     background:linear-gradient(to right,#f12711,#f5af19)
 }
+#page .category-lists .category-list li.category-list-item:nth-child(9){
+    background:-webkit-linear-gradient(right,#38ef7d,#11998e);
+    background:-moz-linear-gradient(right,#38ef7d,#11998e);
+    background:-o-linear-gradient(right,#38ef7d,#11998e);
+    background:-ms-linear-gradient(right,#38ef7d,#11998e);
+    background:linear-gradient(to left,#38ef7d,#11998e)
+}
 
 #page .category-lists .category-list li.category-list-item:nth-child(9) a.category-list-link::before{
     content:'🎸'
 }
 #page .category-lists .category-list li.category-list-item:nth-child(9){
+    background:-webkit-linear-gradient(left,#f12711,#f5af19);
+    background:-moz-linear-gradient(left,#f12711,#f5af19);
+    background:-o-linear-gradient(left,#f12711,#f5af19);
+    background:-ms-linear-gradient(left,#f12711,#f5af19);
+    background:linear-gradient(to right,#f12711,#f5af19)
+}
+
+#page .category-lists .category-list li.category-list-item:nth-child(10){
+    background:-webkit-linear-gradient(right,#38ef7d,#11998e);
+    background:-moz-linear-gradient(right,#38ef7d,#11998e);
+    background:-o-linear-gradient(right,#38ef7d,#11998e);
+    background:-ms-linear-gradient(right,#38ef7d,#11998e);
+    background:linear-gradient(to left,#38ef7d,#11998e)
+}
+
+#page .category-lists .category-list li.category-list-item:nth-child(10) a.category-list-link::before{
+    content:'🔏'
+}
+#page .category-lists .category-list li.category-list-item:nth-child(10){
+    background:-webkit-linear-gradient(left,#f12711,#f5af19);
+    background:-moz-linear-gradient(left,#f12711,#f5af19);
+    background:-o-linear-gradient(left,#f12711,#f5af19);
+    background:-ms-linear-gradient(left,#f12711,#f5af19);
+    background:linear-gradient(to right,#f12711,#f5af19)
+}
+
+
+#page .category-lists .category-list li.category-list-item:nth-child(11){
+    background:-webkit-linear-gradient(right,#38ef7d,#11998e);
+    background:-moz-linear-gradient(right,#38ef7d,#11998e);
+    background:-o-linear-gradient(right,#38ef7d,#11998e);
+    background:-ms-linear-gradient(right,#38ef7d,#11998e);
+    background:linear-gradient(to left,#38ef7d,#11998e)
+}
+
+#page .category-lists .category-list li.category-list-item:nth-child(11) a.category-list-link::before{
+    content:'🎸'
+}
+#page .category-lists .category-list li.category-list-item:nth-child(11){
     background:-webkit-linear-gradient(left,#f12711,#f5af19);
     background:-moz-linear-gradient(left,#f12711,#f5af19);
     background:-o-linear-gradient(left,#f12711,#f5af19);
