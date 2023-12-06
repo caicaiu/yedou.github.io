@@ -2,6 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://www.caicablog.top/other/index.html</loc>
+    
+    <lastmod>2023-12-06</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://www.caicablog.top/yedou-blog/ec7d7221.html</loc>
+    
+    <lastmod>2023-12-06</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://www.caicablog.top/categories/index.html</loc>
+    
+    <lastmod>2023-12-06</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>http://www.caicablog.top/tags/index.html</loc>
+    
+    <lastmod>2023-12-06</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>http://www.caicablog.top/yedou-blog/4a17b156.html</loc>
     
     <lastmod>2023-12-05</lastmod>
@@ -91,33 +127,22 @@
     <priority>0.6</priority>
   </url>
   
-  <url>
-    <loc>http://www.caicablog.top/tags/index.html</loc>
-    
-    <lastmod>2023-12-05</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>http://www.caicablog.top/categories/index.html</loc>
-    
-    <lastmod>2023-12-05</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
 
   <url>
     <loc>http://www.caicablog.top/</loc>
-    <lastmod>2023-12-05</lastmod>
+    <lastmod>2023-12-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   
 
+  
+  <url>
+    <loc>http://www.caicablog.top/categories/%E5%85%B6%E4%BB%96%E7%9F%A5%E8%AF%86/</loc>
+    <lastmod>2023-12-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
   
 </urlset>

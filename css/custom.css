@@ -12,7 +12,7 @@
 
 
 /* 右侧小按钮圆角 */
-#rightside>div>button,#to_comment {
+#rightside > div > button, #to_comment {
     margin-right: 4px;
     border-radius: 7px;
 }
@@ -24,7 +24,7 @@
 
 
 /*底部切换按钮*/
-.layout>.recent-posts .pagination>* {
+.layout > .recent-posts .pagination > * {
     display: inline-block;
     margin: 0 6px;
     width: 2.5em;
@@ -39,25 +39,28 @@
 
 
 /*个人信息美化*/
-#aside-content>.card-widget.card-info {
+#aside-content > .card-widget.card-info {
     background: #fff url(https://pic.netbian.com/uploads/allimg/230605/235004-1685980204f695.jpg) top 33% center no-repeat;
     position: relative;
 }
+
 #aside-content .card-info #card-info-btn {
     display: none;
 }
+
 #aside-content .card-info .author-info__name {
     font-weight: 700;
     color: black;
 }
+
 #aside-content .card-info .author-info__description {
     font-weight: 600;
     color: black;
 }
+
 .site-data > a .headline {
     color: rgb(0 0 0 / 100%);
 }
-
 
 
 /* 版权信息 */
@@ -170,7 +173,7 @@
     color: var(--heo-lighttext);
 }
 
-#post>div.post-copyright>div.post-copyright__author>span>span {
+#post > div.post-copyright > div.post-copyright__author > span > span {
     padding: 0;
     color: var(--heo-fontcolor);
     font-weight: bold;
@@ -183,7 +186,7 @@
 }
 
 @media screen and (max-width: 768px) {
-    #post>div.post-copyright>div.post-copyright__author>span>span {
+    #post > div.post-copyright > div.post-copyright__author > span > span {
         -webkit-line-clamp: 3;
     }
 
@@ -198,19 +201,19 @@
 }
 
 /* 链接 */
-#post>div.post-copyright>div.post-copyright__type {
+#post > div.post-copyright > div.post-copyright__type {
     line-height: 16px;
     display: flex;
     margin-top: 8px;
 }
 
-#post>div.post-copyright>div.post-copyright__type>span>a {
+#post > div.post-copyright > div.post-copyright__type > span > a {
     font-size: 14px;
     opacity: 0.6;
     line-height: 16px;
 }
 
-#post>div.post-copyright>div.post-copyright__type>span>a:hover {
+#post > div.post-copyright > div.post-copyright__type > span > a:hover {
     opacity: 1;
     background: none;
 }
@@ -221,12 +224,14 @@
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
 }
+
 /* 提示 */
-#post>div.post-copyright>div.post-copyright__notice {
+#post > div.post-copyright > div.post-copyright__notice {
     font-size: 0.7rem;
     line-height: 1rem;
     margin: 0.5rem 0;
 }
+
 /*装饰圈*/
 #post .post-copyright:before {
     display: none;
@@ -236,6 +241,7 @@
     color: #5a7ed7;
     font-weight: bold;
 }
+
 #post .post-copyright {
     padding: 2rem 1.3rem;
     border-radius: 11px;
@@ -254,3 +260,17 @@
 .relatedPosts > .relatedPosts-list > div {
     border-radius: 20px;
 }
+
+.ais-PoweredBy-logo {
+    display: none;
+}
+
+/* 一级菜单居中 */
+#nav .menus_items {
+    /* display: inline; 这个带不带都可以，本来就是inline */
+    position: absolute;
+    width: fit-content;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
